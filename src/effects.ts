@@ -1,6 +1,6 @@
-import { WritableKeys } from '@uni/fnkit'
-import { getLocalStorageItem, setLocalStorageItem } from '@uni/uikit'
-import { XStoreEffectItem } from '.'
+import { WritableKeys } from '@edsolater/fnkit'
+import { XStoreEffectItem } from './type'
+import { getLocalStorageItem, setLocalStorageItem } from './utils/localStorage'
 
 /**
  * is `XStore`'s effect

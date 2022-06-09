@@ -10,7 +10,15 @@ import {
   isString,
   asyncInvoke
 } from '@edsolater/fnkit'
-import { XStore, StoreTemplate, ProxiedSetters, CreateXStoreOptions, XStoreSubscribe, XStoreSubscribeOptions, XStoreUnsubscribeFn } from './type'
+import {
+  XStore,
+  StoreTemplate,
+  ProxiedSetters,
+  CreateXStoreOptions,
+  XStoreSubscribe,
+  XStoreSubscribeOptions,
+  XStoreUnsubscribeFn
+} from './type'
 
 export function isXStore(v: unknown): v is XStore {
   return isObject(v) && isFunction(v.subscribe) && isObject(v.initStore)
