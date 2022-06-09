@@ -1,0 +1,30 @@
+{
+  "name": "@edsolater/xstore",
+  "version": "0.0.1",
+  "description": "simple react management, simulate core philosophy of zustand",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsup",
+    "test": "jest",
+    "type-check": "tsc --pretty --noEmit"
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edsolater/xstore.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "edsolater <edsolater@qq.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/edsolater/xstore/issues"
+  },
+  "homepage": "https://github.com/edsolater/xstore#readme",
+  "devDependencies": {
+    "@types/node": "^17.0.41",
+    "tsup": "^6.1.0",
+    "typescript": "^4.7.3"
+  }
+}
