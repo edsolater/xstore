@@ -4,6 +4,7 @@
   "description": "simple react management, simulate core philosophy of zustand",
   "main": "./dist/index.js",
   "scripts": {
+    "publish": "npm publish --access public",
     "build": "tsup",
     "test": "jest",
     "type-check": "tsc --pretty --noEmit"
