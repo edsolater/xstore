@@ -1,6 +1,6 @@
 {
   "name": "@edsolater/xstore",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "simple react management, simulate core philosophy of zustand",
   "main": "./dist/index.js",
   "scripts": {
