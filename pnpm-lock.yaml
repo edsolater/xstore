@@ -1,7 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
-  '@edsolater/fnkit': ^0.0.3
+  '@edsolater/fnkit': ^0.0.5
   '@types/node': ^17.0.41
   '@types/react': ^18.0.12
   react: ^18.1.0
@@ -9,7 +9,7 @@ specifiers:
   typescript: ^4.7.3
 
 dependencies:
-  '@edsolater/fnkit': 0.0.3
+  '@edsolater/fnkit': 0.0.5
   react: 18.1.0
 
 devDependencies:
@@ -20,8 +20,8 @@ devDependencies:
 
 packages:
 
-  /@edsolater/fnkit/0.0.3:
-    resolution: {integrity: sha512-K0md5jpFaIz9Guhxft4T9c+Lw20rVkzdslM/ru8Hs2d3OlHc2awfMhY/PB8mloFXCNhx3+FoWdEUF28K3dTMHg==}
+  /@edsolater/fnkit/0.0.5:
+    resolution: {integrity: sha512-T900jYYRaYEhUaZhtLgfrTCfTdDOcMh79Al5UXhCXMuhEVtGkn8MSs3rhMIpwRUVbrJWm9O3kgnXgm1wWHOgxQ==}
     dev: false
 
   /@nodelib/fs.scandir/2.1.5:
