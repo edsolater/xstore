@@ -11,7 +11,6 @@
     "noEmit": true,
     "outDir": "dist",
     "declaration": true, // see https://www.typescriptlang.org/docs/handbook/declaration-files/dts-from-js.html#tsconfig
-    "declarationMap": true,
     "isolatedModules": true,
   },
 }
