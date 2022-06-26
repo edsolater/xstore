@@ -56,7 +56,7 @@ export type CreateXStoreOptions<T extends XStoreTemplate = AnyObj> = {
   /** used by localStorageEffect*/
   name: string
   default?: T
-  atomEffects?: MayArray<XStoreAtomEffect<T>>
+  atomEffects?: MayArray<XStoreAtomEffect<AnyObj>>
 }
 
 export type GetUseDataHooks<T extends XStoreTemplate = AnyObj> = () => T & ProxiedSetters<T>
