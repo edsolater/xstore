@@ -5,7 +5,9 @@ import { XStore } from './type'
 import { useForceUpdate } from './utils/useForceUpdate'
 import { useIsomorphicLayoutEffect } from './utils/useIsomorphicLayoutEffect '
 
-export function useXStore<T extends object>(xStore: XStore<T>): Omit<XStore<T>, 'subscribe'> {
+export function useXStore<T extends object>(xStore: XStore<T>, options?:{
+  context: unknown
+}): Omit<XStore<T>, 'subscribe'> {
   const [, forceUpdate] = useForceUpdate()
 
   const subscribeKeys = useRef([] as (keyof T)[])
@@ -25,5 +27,3 @@ export function useXStore<T extends object>(xStore: XStore<T>): Omit<XStore<T>, 
     }
   })
 }
-
-export * from './effects'

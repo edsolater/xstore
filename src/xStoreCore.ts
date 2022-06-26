@@ -17,7 +17,8 @@ import {
   CreateXStoreOptions,
   XStoreSubscribe,
   XStoreSubscribeOptions,
-  XStoreUnsubscribeFn
+  XStoreUnsubscribeFn,
+  XStoreSetOptions
 } from './type'
 
 export function isXStore(v: unknown): v is XStore {
@@ -33,7 +34,6 @@ const getProxiedSetters = <S extends StoreTemplate>(
   setAll: React.Dispatch<React.SetStateAction<S>>
 ): ProxiedSetters<S> => {
   const cache = new Map() // to avoid rerender by always returned new setState function
-
   const baseSetters = {
     set(p: any, v?: any) {
       if (typeof p === 'string') {
@@ -43,9 +43,15 @@ const getProxiedSetters = <S extends StoreTemplate>(
           return oldV === newV ? oldStore : { ...oldStore, [p]: newV }
         })
       } else if (typeof p === 'object') {
+        const options = v as XStoreSetOptions | undefined
+        const isCoverMode = options?.operation === 'cover'
         setAll((oldStore) => {
           const newStore = shrinkToValue(p, [oldStore])
-          return oldStore === newStore ? oldStore : { ...oldStore, ...newStore }
+          return oldStore === newStore
+            ? oldStore
+            : isCoverMode
+            ? newStore // cover
+            : { ...oldStore, ...newStore } // merge
         })
       }
     }

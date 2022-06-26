@@ -3,6 +3,7 @@ import { MayArray, OnlyWritable, WritableKeys } from '@edsolater/fnkit'
 type MayStateFn<T> = T | ((prev: T) => T)
 
 export type XStoreUnsubscribeFn = () => void
+
 export type XStoreSubscribeOptions = {
   immediately?: boolean
 }
@@ -21,15 +22,21 @@ export type XStore<T extends StoreTemplate = StoreTemplate> = T &
     initStore: T
     subscribe: XStoreSubscribe<T>
   }
+
 export type XStorePlainKey<X extends XStore> = X extends XStore<infer T> ? keyof T : never
+
 export type StoreTemplate = { [key: string]: any }
+
+export type XStoreSetOptions = {
+  operation?: 'merge' /* default */ | 'cover'
+}
 
 export type ProxiedSetters<S extends StoreTemplate> = {
   /**
    *  will be merged to the store
    */
   set<P extends WritableKeys<S>>(propName: P, value: MayStateFn<S[P]>): void
-  set(newState: MayStateFn<Partial<OnlyWritable<S>>>): void
+  set(newState: MayStateFn<Partial<OnlyWritable<S>>>, options?: XStoreSetOptions): void
 } & {
   [K in `set${Capitalize<Extract<WritableKeys<S>, string>>}`]: (
     newState: MayStateFn<K extends `set${infer O}` ? S[Uncapitalize<O>] : any> //TODO: `infer O` and `Uncapitalize<O>` means XStore is not friendly with Pascalcase Variable
