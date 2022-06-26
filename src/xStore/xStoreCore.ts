@@ -5,23 +5,22 @@ import {
   toCamelCase,
   MayFn,
   flap,
-  MayArray,
   AnyFn,
   isString,
   asyncInvoke
 } from '@edsolater/fnkit'
 import {
-  XStore,
-  StoreTemplate,
+  XStoreAtom,
+  XStoreTemplate,
   ProxiedSetters,
   CreateXStoreOptions,
   XStoreSubscribe,
   XStoreSubscribeOptions,
   XStoreUnsubscribeFn,
   XStoreSetOptions
-} from './type'
+} from '../type'
 
-export function isXStore(v: unknown): v is XStore {
+export function isXStore(v: unknown): v is XStoreAtom {
   return isObject(v) && isFunction(v.subscribe) && isObject(v.initStore)
 }
 
@@ -30,7 +29,7 @@ export function isXStore(v: unknown): v is XStore {
  * @param setAll set parent's store
  * @returns computed setState methods
  */
-const getProxiedSetters = <S extends StoreTemplate>(
+const getProxiedSetters = <S extends XStoreTemplate>(
   setAll: React.Dispatch<React.SetStateAction<S>>
 ): ProxiedSetters<S> => {
   const cache = new Map() // to avoid rerender by always returned new setState function
@@ -76,10 +75,10 @@ const getProxiedSetters = <S extends StoreTemplate>(
   })
 }
 
-export function createXStore<T extends StoreTemplate>(options: CreateXStoreOptions<T>): XStore<T> {
+export function createXStore<T extends XStoreTemplate>(options: CreateXStoreOptions<T>): XStoreAtom<T> {
   // create subscribable plain Store
-  const plainStore = createXStoreWithoutSetters<T>(options.default)
-  const setStoreState = (dispatch: MayFn<StoreTemplate, [StoreTemplate]>) => {
+  const plainStore = createXStoreWithoutSetters<T>(options.name, options.default)
+  const setStoreState = (dispatch: MayFn<XStoreTemplate, [XStoreTemplate]>) => {
     const newStoreValue = shrinkToValue(dispatch, [plainStore])
     Object.entries(newStoreValue).forEach(([k, v]) => {
       // @ts-expect-error no need care about type here
@@ -99,71 +98,87 @@ export function createXStore<T extends StoreTemplate>(options: CreateXStoreOptio
       // @ts-expect-error no need care about type here
       return target[property] ?? plainStore[property]
     }
-  }) as XStore<T>
+  }) as XStoreAtom<T>
 
-  if (options.effects) {
-    setTimeout(() => {
-      // effect should be invoked after xStoreAtom's creating
-      const onSelfSet = mergedDataCenter.subscribe
-      const onInit: (fn: () => void) => void = (fn) => {
-        fn()
-      }
-      flap([options.effects]).forEach((effect) => effect?.({ onSelfSet, onInit, options, self: mergedDataCenter }))
-    })
-  }
+  invokeXStoreEffects<T>({ options, attachedAtom: mergedDataCenter })
 
   return mergedDataCenter
 }
 
+function invokeXStoreEffects<T extends XStoreTemplate>({
+  options,
+  attachedAtom
+}: {
+  options: CreateXStoreOptions<T>
+  attachedAtom: XStoreAtom<T>
+}) {
+  if (options.atomEffects) {
+    setTimeout(() => {
+      flap([options.atomEffects]).forEach((atomEffect) => atomEffect?.({ attachedAtom }))
+    })
+  }
+}
+
 /** create xStore with subscribe and initStore */
-function createXStoreWithoutSetters<T extends StoreTemplate>(
+function createXStoreWithoutSetters<T extends XStoreTemplate>(
+  xstoreName: string,
   defaultStore?: T | undefined
 ): T & {
+  xstoreName: string
   subscribe: {
     <P extends keyof T>(
       p: P,
-      fn: (curr: T[P], prev: T[P]) => void,
+      fn: (options: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
       options?: XStoreSubscribeOptions
     ): XStoreUnsubscribeFn
     <P extends keyof T>(
       p: P[],
-      fn: (curr: T[P][], prev: T[P][]) => void,
+      fn: (options: { curr: T[P][]; prev: T[P][]; unsubscribe: () => void }) => void,
       options?: XStoreSubscribeOptions
     ): XStoreUnsubscribeFn
   }
   initStore: T
 } {
-  const temp = { ...defaultStore } as T
+  const temp = { ...defaultStore, xstoreName } as T & { xstoreName: string }
   const initStore = { ...temp }
-  const regested: {
-    [P in keyof T]?: { fn: (...params: any[]) => void; dependences: (keyof T)[] }[]
-  } = {}
 
-  const invokedSubscribedFn = (p: MayArray<keyof T>, fn: AnyFn, store: T, oldStore?: T) => {
-    const dependences = [p].flat()
-    if (dependences.length <= 1) {
-      fn(
-        ...(dependences.length <= 1
-          ? [store[p as keyof T], oldStore?.[p as keyof T]]
-          : [dependences.map((k) => store[k as keyof T]), dependences.map((k) => oldStore?.[k as keyof T])])
-      )
-    }
+  type SubscribedCallbackItem = {
+    fn: (...params: any[]) => void
+    dependences: (keyof T)[]
+    unsubscribe: () => void
   }
+
+  type SubscribedCallbacks = {
+    [P in keyof T]?: SubscribedCallbackItem[]
+  }
+
+  const subscribedCallbacks: SubscribedCallbacks = {}
+
+  const invokedSubscribedFn = (callback: SubscribedCallbackItem, store: T, oldStore?: T) => {
+    const dependences = callback.dependences
+    const currentStoreValue =
+      dependences.length <= 1 ? store[dependences[0]] : dependences.map((k) => store[k as keyof T])
+    const prevStoreValue =
+      dependences.length <= 1 ? oldStore?.[dependences[0]] : dependences.map((k) => oldStore?.[k as keyof T])
+    callback.fn({ curr: currentStoreValue, prev: prevStoreValue, unsubscribe: callback.unsubscribe })
+  }
+
   const proxiedTempStore = new Proxy(temp, {
     set(target, key, value) {
       if (!isString(key)) return true
       if (target[key] === value) return true // sameValue, no need to continue
-      if (key !== 'subscribe' && key !== 'initStore') {
-        const callbacks = regested[key]
+      if (key !== 'subscribe' && key !== 'initStore' && key !== 'xstoreName') {
+        const callbacks = subscribedCallbacks[key]
 
         // invoke registed callback
-        callbacks?.forEach(({ fn, dependences }) => {
+        callbacks?.forEach((callback) => {
+          const { fn, dependences } = callback
           if (dependences.includes(key)) {
             const oldStore = target
             const newStore = { ...target, [key]: value }
             asyncInvoke(
               () => {
-                invokedSubscribedFn(dependences, fn, newStore, oldStore)
+                invokedSubscribedFn(callback, newStore, oldStore)
               },
               { key: fn }
             )
@@ -176,17 +191,17 @@ function createXStoreWithoutSetters<T extends StoreTemplate>(
   })
   const subscribe: XStoreSubscribe<T> = (p: (keyof T)[], fn: AnyFn, options?: XStoreSubscribeOptions) => {
     const dependences = [p].flat()
-    dependences.forEach((p) => {
-      // @ts-expect-error no need care about type here
-      regested[p] = (regested[p] ?? []).concat({ fn: fn, dependences: [p].flat() })
-    })
-    if (options?.immediately) {
-      invokedSubscribedFn(p, fn, temp)
-    }
     const unsubscribe = () => {
       dependences.forEach((p) => {
-        regested[p] = regested[p]?.filter((cb) => cb?.fn !== fn)
+        subscribedCallbacks[p] = subscribedCallbacks[p]?.filter((cb) => cb?.fn !== fn)
       })
+    }
+    const callbackItem = { fn, dependences, unsubscribe }
+    dependences.forEach((p) => {
+      subscribedCallbacks[p] = [...(subscribedCallbacks[p] ?? []), callbackItem]
+    })
+    if (options?.immediately) {
+      invokedSubscribedFn(callbackItem, temp)
     }
     return unsubscribe
   }

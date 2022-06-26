@@ -1,13 +1,13 @@
 import { useRef } from 'react'
 import { unified } from '@edsolater/fnkit'
 
-import { XStore } from './type'
-import { useForceUpdate } from './utils/useForceUpdate'
-import { useIsomorphicLayoutEffect } from './utils/useIsomorphicLayoutEffect '
+import { XStoreAtom } from '../type'
+import { useForceUpdate } from '../utils/useForceUpdate'
+import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect '
 
-export function useXStore<T extends object>(xStore: XStore<T>, options?:{
+export function useXStore<T extends object>(xStore: XStoreAtom<T>, options?:{
   context: unknown
-}): Omit<XStore<T>, 'subscribe'> {
+}): Omit<XStoreAtom<T>, 'subscribe'> {
   const [, forceUpdate] = useForceUpdate()
 
   const subscribeKeys = useRef([] as (keyof T)[])

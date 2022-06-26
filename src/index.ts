@@ -1,4 +1,4 @@
-export * from './xStoreCore'
-export * from './effects'
+export * from './xStore/xStoreCore'
+export * from './xStore/effects'
 export * from './type'
-export * from './useStore'
+export * from './hooks/useStore'

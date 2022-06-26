@@ -1,4 +1,4 @@
-import { MayArray, OnlyWritable, WritableKeys } from '@edsolater/fnkit'
+import { AnyObj, MayArray, OnlyWritable, WritableKeys } from '@edsolater/fnkit'
 
 type MayStateFn<T> = T | ((prev: T) => T)
 
@@ -8,30 +8,35 @@ export type XStoreSubscribeOptions = {
   immediately?: boolean
 }
 
-export type XStoreSubscribe<T extends StoreTemplate> = {
-  <P extends keyof T>(p: P, fn: (curr: T[P], prev: T[P]) => void, options?: XStoreSubscribeOptions): XStoreUnsubscribeFn
+export type XStoreSubscribe<T extends XStoreTemplate> = {
+  <P extends keyof T>(
+    p: P,
+    fn: (options: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
+    options?: XStoreSubscribeOptions
+  ): XStoreUnsubscribeFn
   <P extends keyof T>(
     p: P[],
-    fn: (curr: T[P][], prev: T[P][]) => void,
+    fn: (options: { curr: T[P][]; prev: T[P][]; unsubscribe: () => void }) => void,
     options?: XStoreSubscribeOptions
   ): XStoreUnsubscribeFn
 }
 
-export type XStore<T extends StoreTemplate = StoreTemplate> = T &
+export type XStoreAtom<T extends XStoreTemplate = AnyObj> = T &
   ProxiedSetters<T> & {
+    xstoreName: string
     initStore: T
     subscribe: XStoreSubscribe<T>
   }
 
-export type XStorePlainKey<X extends XStore> = X extends XStore<infer T> ? keyof T : never
+export type XStorePropertyKeys<X extends XStoreAtom> = X extends XStoreAtom<infer T> ? keyof T : never
 
-export type StoreTemplate = { [key: string]: any }
+export type XStoreTemplate = { [key: string]: any }
 
 export type XStoreSetOptions = {
   operation?: 'merge' /* default */ | 'cover'
 }
 
-export type ProxiedSetters<S extends StoreTemplate> = {
+export type ProxiedSetters<S extends XStoreTemplate> = {
   /**
    *  will be merged to the store
    */
@@ -43,19 +48,13 @@ export type ProxiedSetters<S extends StoreTemplate> = {
   ) => void
 }
 
-export type XStoreEffectItem<T extends StoreTemplate> = (tools: {
-  options: Omit<CreateXStoreOptions<T>, 'effects'>
-  onSelfSet: XStoreSubscribe<T>
-  /** inner function will be invoked after all sync xStore has created */
-  onInit: (fn: () => void) => void
-  self: XStore<T>
-}) => void
+export type XStoreAtomEffect<T extends XStoreTemplate = AnyObj> = (tools: { attachedAtom: XStoreAtom<T> }) => void
 
-export type CreateXStoreOptions<T extends StoreTemplate> = {
+export type CreateXStoreOptions<T extends XStoreTemplate = AnyObj> = {
   /** used by localStorageEffect*/
   name: string
   default?: T
-  effects?: MayArray<XStoreEffectItem<T>>
+  atomEffects?: MayArray<XStoreAtomEffect<T>>
 }
 
-export type GetUseDataHooks<T extends StoreTemplate> = () => T & ProxiedSetters<T>
+export type GetUseDataHooks<T extends XStoreTemplate = AnyObj> = () => T & ProxiedSetters<T>
