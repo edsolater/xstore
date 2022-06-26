@@ -1,18 +1,15 @@
-import { XStoreAtom, XStoreAtomEffect, XStorePropertyKeys, XStoreSubscribeOptions } from '../type'
+import { XStoreAtom, XStoreAtomEffect, XStorePropertyKeys } from '../type'
 
 type CleanFn = () => any
-type SubscribedFn = (utils: { attachedAtom: XStoreAtom }) => (void | Promise<void>) | CleanFn
+type SubscribedFn = (utils: { attachedAtom: XStoreAtom /* TODO: dependences value */}) => (void | Promise<void>) | CleanFn
 type SubscribePath<T extends XStoreAtom> = {
   atom: T
   atomProperty: XStorePropertyKeys<T>
 }
 
-// TODO: auto unsubscribe when atom detected
-const allEffects = new Map()
-
 export function createAtomEffect(effectFn: SubscribedFn, dependences: SubscribePath<XStoreAtom>[]): XStoreAtomEffect {
   return (utils) => {
-    if (!dependences.length) effectFn(utils)
+    effectFn(utils)
     dependences.forEach(({ atom, atomProperty }) => {
       atom.subscribe(atomProperty, () => {
         effectFn(utils)
