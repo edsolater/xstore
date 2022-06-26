@@ -1,7 +1,7 @@
 import { XStoreAtom, XStoreAtomEffect, XStorePropertyKeys, XStoreSubscribeOptions } from '../type'
 
 type CleanFn = () => any
-type SubscribedFn = (utils: { attachedAtom: XStoreAtom }) => void | CleanFn
+type SubscribedFn = (utils: { attachedAtom: XStoreAtom }) => (void | Promise<void>) | CleanFn
 type SubscribePath<T extends XStoreAtom> = {
   atom: T
   atomProperty: XStorePropertyKeys<T>

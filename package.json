@@ -1,6 +1,6 @@
 {
   "name": "@edsolater/xstore",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "simple react management, simulate core philosophy of zustand",
   "main": "./dist/index.js",
   "scripts": {
@@ -13,7 +13,8 @@
     "url": "git+https://github.com/edsolater/xstore.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "author": "edsolater <edsolater@qq.com>",
   "license": "MIT",

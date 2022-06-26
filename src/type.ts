@@ -48,7 +48,9 @@ export type ProxiedSetters<S extends XStoreTemplate> = {
   ) => void
 }
 
-export type XStoreAtomEffect<T extends XStoreTemplate = AnyObj> = (tools: { attachedAtom: XStoreAtom<T> }) => void
+export type XStoreAtomEffect<T extends XStoreTemplate = AnyObj> = (tools: {
+  attachedAtom: XStoreAtom<T>
+}) => void | Promise<void>
 
 export type CreateXStoreOptions<T extends XStoreTemplate = AnyObj> = {
   /** used by localStorageEffect*/
