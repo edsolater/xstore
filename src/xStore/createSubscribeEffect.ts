@@ -10,25 +10,18 @@ type SubscribePath<T extends XStoreAtom> = {
 // TODO: auto unsubscribe when atom detected
 const allEffects = new Map()
 
-export function createAtomEffect(
-  effectFn: SubscribedFn,
-  dependences: SubscribePath<XStoreAtom>[],
-  options?: XStoreSubscribeOptions
-): XStoreAtomEffect {
+export function createAtomEffect(effectFn: SubscribedFn, dependences: SubscribePath<XStoreAtom>[]): XStoreAtomEffect {
   return (utils) => {
+    if (!dependences.length) effectFn(utils)
     dependences.forEach(({ atom, atomProperty }) => {
-      atom.subscribe(
-        atomProperty,
-        () => {
-          effectFn(utils)
-        },
-        options
-      )
+      atom.subscribe(atomProperty, () => {
+        effectFn(utils)
+      })
     })
   }
 }
 
-export function getSubscribePath<T extends XStoreAtom = XStoreAtom>(
+export function createSubscribePath<T extends XStoreAtom = XStoreAtom>(
   atom: T,
   atomProperty: XStorePropertyKeys<T>
 ): SubscribePath<T> {
