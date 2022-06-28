@@ -100,7 +100,10 @@ export function createXStore<T extends XStoreTemplate>(options: CreateXStoreOpti
     }
   }) as XStoreAtom<T>
 
-  invokeXStoreEffects<T>({ options, attachedAtom: mergedDataCenter })
+  Promise.resolve().then(() => {
+    // to next frame
+    invokeXStoreEffects<T>({ options, attachedAtom: mergedDataCenter })
+  })
 
   return mergedDataCenter
 }
