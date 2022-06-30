@@ -41,7 +41,7 @@ const getProxiedSetters = <S extends XStoreTemplate>(
           const newV = shrinkToValue(v, [oldV])
           return oldV === newV ? oldStore : { ...oldStore, [p]: newV }
         })
-      } else if (typeof p === 'object') {
+      } else if (typeof p === 'object' || typeof p === 'function') {
         const options = v as XStoreSetOptions | undefined
         const isCoverMode = options?.operation === 'cover'
         setAll((oldStore) => {
