@@ -1,4 +1,4 @@
-import { shrinkToValue, isExist, isNullish } from "@edsolater/fnkit"
+import { isExist, isNullish, shrinkToValue } from '@edsolater/fnkit'
 
 export function setLocalStorageItem<T = any>(
   key: string,

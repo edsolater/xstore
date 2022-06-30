@@ -1,14 +1,11 @@
-import { useRef } from 'react'
-import { AnyObj, MayFn, unified } from '@edsolater/fnkit'
+import { AnyObj, MayFn } from '@edsolater/fnkit'
 
 import { XStoreAtom } from '../type'
-import { useForceUpdate } from '../utils/useForceUpdate'
-import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect '
-import { useXStore } from './useXStore'
+import { useXStore, UseXStoreOptions } from './useXStore'
 type ZustandHookDispatcher<T extends AnyObj> = MayFn<Partial<T>, [oldStore: T]>
 
 type ZustandHook<T extends AnyObj> = {
-  <U>(selector?: (store: T) => U): U
+  <U>(selector?: (storeValue: T) => U): U
   setState(dispatcher: ZustandHookDispatcher<T>): void
   getState(): T
 }
@@ -27,15 +24,18 @@ function createPathCollector<T extends object>(store: T) {
   ] as const
 }
 
-export function createZustandStoreHook<T extends object>(xStoreAtom: XStoreAtom<T>): ZustandHook<T> {
-  const hook = <U>(selector?: (store: T) => U) => {
-    const [pathCollector, getPath] = createPathCollector(xStoreAtom)
+export function createZustandStoreHook<T extends object>(
+  xStoreAtom: XStoreAtom<T>,
+  options?: UseXStoreOptions
+): ZustandHook<T> {
+  const hook = <U>(selector?: (storeValues: T) => U) => {
+    const [pathCollector, getPath] = createPathCollector(xStoreAtom.values)
     selector?.(pathCollector)
     const propertyKey = getPath()[0]
-    const value = selector ? useXStore(xStoreAtom)[propertyKey] : useXStore(xStoreAtom, { urgentRerender: true })
+    const value = selector ? useXStore(xStoreAtom)[propertyKey] : useXStore(xStoreAtom, options)
     return value
   }
-  hook.getState = () => xStoreAtom
+  hook.getState = () => xStoreAtom.values
   hook.setState = (dispatcher) => xStoreAtom.set(dispatcher)
   return hook
 }

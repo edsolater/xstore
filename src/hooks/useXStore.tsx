@@ -1,20 +1,22 @@
-import { useRef } from 'react'
 import { unified } from '@edsolater/fnkit'
+import { useRef } from 'react'
 
 import { XStoreAtom } from '../type'
 import { useForceUpdate } from '../utils/useForceUpdate'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect '
 
+export type UseXStoreOptions = {
+  /** anything in atom can cause rerender */
+  urgentRerender?: boolean
+}
+
 export function useXStore<T extends object>(
   xStoreAtom: XStoreAtom<T>,
-  options?: {
-    /** anything in atom can cause rerender */
-    urgentRerender?: boolean
-  }
-): Omit<XStoreAtom<T>, 'subscribe'> {
+  options?: UseXStoreOptions
+): XStoreAtom<T>['values'] {
   const [, forceUpdate] = useForceUpdate()
 
-  const subscribeKeys = useRef((options?.urgentRerender ? Object.keys(xStoreAtom) : []) as (keyof T)[])
+  const subscribeKeys = useRef((options?.urgentRerender ? Object.keys(xStoreAtom.values) : []) as (keyof T)[])
 
   useIsomorphicLayoutEffect(() => {
     const keys = subscribeKeys.current
@@ -24,7 +26,7 @@ export function useXStore<T extends object>(
   }, [])
 
   // @ts-ignore useProxy to collect subscribeKeys
-  return new Proxy(xStoreAtom, {
+  return new Proxy(xStoreAtom.values, {
     get(target, p) {
       subscribeKeys.current = unified([...subscribeKeys.current, p as keyof T])
       return Reflect.get(target, p)
