@@ -1,4 +1,4 @@
-import { AnyObj, MayArray, MayFn, OnlyWritable, SKeyof, WritableKeys } from '@edsolater/fnkit'
+import { AnyObj, MayArray, MayDeepArray, MayFn, OnlyWritable, SKeyof, WritableKeys } from '@edsolater/fnkit'
 
 type MayStateFn<T, F = T> = T | ((prev: F) => T)
 
@@ -67,5 +67,5 @@ export type CreateXStoreOptions<T extends XStoreTemplate = AnyObj> = {
   /** used by localStorageEffect*/
   name: string
   default?: T
-  atomEffects?: MayArray<XStoreAtomEffect<AnyObj>>
+  atomEffects?: MayDeepArray<XStoreAtomEffect<AnyObj>>
 }

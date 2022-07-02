@@ -1,4 +1,14 @@
-import { AnyFn, asyncInvoke, flap, isFunction, isObject, isString, MayFn, shrinkToValue } from '@edsolater/fnkit'
+import {
+  AnyFn,
+  asyncInvoke,
+  flap,
+  flapDeep,
+  isFunction,
+  isObject,
+  isString,
+  MayFn,
+  shrinkToValue
+} from '@edsolater/fnkit'
 import {
   CreateXStoreOptions,
   XStoreAtomSetter,
@@ -75,8 +85,8 @@ function invokeXStoreEffects<T extends XStoreTemplate>({
   attachedAtom: XStoreAtom<T>
 }) {
   if (options.atomEffects) {
-    setTimeout(() => {
-      flap([options.atomEffects]).forEach((atomEffect) => atomEffect?.({ attachedAtom: attachedAtom as any }))
+    Promise.resolve().then(() => {
+      flapDeep(options.atomEffects).forEach((atomEffect) => atomEffect?.({ attachedAtom: attachedAtom as any }))
     })
   }
 }
