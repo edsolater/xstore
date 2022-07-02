@@ -1,9 +1,13 @@
+import { AnyFn, asyncInvoke, flap, isFunction, isObject, isString, MayFn, shrinkToValue } from '@edsolater/fnkit'
 import {
-  AnyFn, asyncInvoke, flap, isFunction, isObject, isString, MayFn, shrinkToValue
-} from '@edsolater/fnkit'
-import {
-  CreateXStoreOptions, ProxiedSetters, XStoreAtom, XStoreSetOptions, XStoreSubscribe,
-  XStoreSubscribeOptions, XStoreTemplate, XStoreUnsubscribeFn
+  CreateXStoreOptions,
+  XStoreAtomSetter,
+  XStoreAtom,
+  XStoreSetOptions,
+  XStoreSubscribe,
+  XStoreSubscribeOptions,
+  XStoreTemplate,
+  XStoreUnsubscribeFn
 } from '../type'
 
 export function isXStore(v: unknown): v is XStoreAtom {
@@ -15,9 +19,9 @@ export function isXStore(v: unknown): v is XStoreAtom {
  * @param setAll set parent's store
  * @returns computed setState methods
  */
-const getStoreSetters = <S extends XStoreTemplate>(
+const createXStoreSet = <S extends XStoreTemplate>(
   setAll: React.Dispatch<React.SetStateAction<S>>
-): ProxiedSetters<S> => {
+): XStoreAtomSetter<S> => {
   function set(p: any, v?: any) {
     if (typeof p === 'string') {
       setAll((oldStore) => {
@@ -43,15 +47,17 @@ const getStoreSetters = <S extends XStoreTemplate>(
 
 export function createXStore<T extends XStoreTemplate>(options: CreateXStoreOptions<T>): XStoreAtom<T> {
   // create subscribable plain Store
-  const plainStore = createXStoreWithoutSetters<T>(options.name, options.default)
+  const tempAtom = createXStoreWithoutSetters<T>(options.name, options.default)
+  const get = (property?: keyof T) => (property ? tempAtom.values[property] : tempAtom.values)
   const setStoreState = (dispatch: MayFn<XStoreTemplate, [XStoreTemplate]>) => {
-    const newStoreValue = shrinkToValue(dispatch, [plainStore.values])
+    const newStoreValue = shrinkToValue(dispatch, [tempAtom.values])
     Object.entries(newStoreValue).forEach(([k, v]) => {
       // @ts-expect-error no need care about type here
-      plainStore.values[k] = v
+      tempAtom.values[k] = v
     })
   }
-  const atom = { ...plainStore, set: getStoreSetters(setStoreState) } as unknown as XStoreAtom<T>
+  const set = createXStoreSet(setStoreState)
+  const atom = { ...tempAtom, set, get } as unknown as XStoreAtom<T>
 
   Promise.resolve().then(() => {
     // to next frame

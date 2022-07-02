@@ -1,4 +1,4 @@
-import { AnyObj, MayArray, MayFn, OnlyWritable, WritableKeys } from '@edsolater/fnkit'
+import { AnyObj, MayArray, MayFn, OnlyWritable, SKeyof, WritableKeys } from '@edsolater/fnkit'
 
 type MayStateFn<T, F = T> = T | ((prev: F) => T)
 
@@ -26,7 +26,8 @@ export type XStoreAtom<T extends XStoreTemplate = any> = {
   initStore: T
   subscribe: XStoreSubscribe<T>
   values: T
-  set: ProxiedSetters<T>
+  set: XStoreAtomSetter<T>
+  get: XStoreAtomGetter<T>
 }
 
 export type XStorePropertyKeys<X extends XStoreAtom> = X extends XStoreAtom<infer T> ? keyof T : never
@@ -37,7 +38,14 @@ export type XStoreSetOptions = {
   operation?: 'merge' /* default */ | 'cover'
 }
 
-export type ProxiedSetters<S extends XStoreTemplate> = {
+export type XStoreAtomGetter<S extends XStoreTemplate> = {
+  /**
+   *  will be merged to the store
+   */
+  <P extends SKeyof<S>>(propName: P): S[P]
+  (): S
+}
+export type XStoreAtomSetter<S extends XStoreTemplate> = {
   /**
    *  will be merged to the store
    */
