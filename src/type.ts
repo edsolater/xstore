@@ -1,6 +1,6 @@
-import { AnyObj, MayArray, OnlyWritable, WritableKeys } from '@edsolater/fnkit'
+import { AnyObj, MayArray, MayFn, OnlyWritable, WritableKeys } from '@edsolater/fnkit'
 
-type MayStateFn<T> = T | ((prev: T) => T)
+type MayStateFn<T, F = T> = T | ((prev: F) => T)
 
 export type XStoreUnsubscribeFn = () => void
 
@@ -42,7 +42,7 @@ export type ProxiedSetters<S extends XStoreTemplate> = {
    *  will be merged to the store
    */
   <P extends WritableKeys<S>>(propName: P, value: MayStateFn<S[P]>): void
-  (newState: MayStateFn<Partial<OnlyWritable<S>>>, options?: XStoreSetOptions): void
+  (newState: MayStateFn<Partial<OnlyWritable<S>>, S>, options?: XStoreSetOptions): void
 }
 
 type GetValueSetters<S extends XStoreTemplate> = {

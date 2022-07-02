@@ -4,7 +4,7 @@ import { XStoreAtom, XStoreAtomEffect, XStorePropertyKeys } from '../type'
 type CleanFn = () => any
 type SubscribedFn<X extends XStoreAtom> = (utils: { attachedAtom: X }) => (void | Promise<void>) | CleanFn
 type SubscribePath<T extends XStoreAtom> = {
-  atom: T
+  atom: MayFn<T>,
   atomProperty: XStorePropertyKeys<T>
 }
 
@@ -15,7 +15,7 @@ export function createAtomEffect<X extends XStoreAtom = XStoreAtom>(
   return (utils: any) => {
     effectFn(utils)
     shrinkToValue(dependences, [utils]).forEach(({ atom, atomProperty }) => {
-      atom.subscribe(atomProperty, () => {
+      shrinkToValue(atom).subscribe(atomProperty, () => {
         effectFn(utils)
       })
     })
@@ -23,8 +23,8 @@ export function createAtomEffect<X extends XStoreAtom = XStoreAtom>(
 }
 
 export function createSubscribePath<T extends XStoreAtom = XStoreAtom>(
-  atom: T,
+  atom: MayFn<T>,
   atomProperty: XStorePropertyKeys<T>
 ): SubscribePath<T> {
-  return { atom, atomProperty }
+  return { atom: atom, atomProperty }
 }
