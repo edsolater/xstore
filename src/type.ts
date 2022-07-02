@@ -21,7 +21,7 @@ export type XStoreSubscribe<T extends XStoreTemplate> = {
   ): XStoreUnsubscribeFn
 }
 
-export type XStoreAtom<T extends XStoreTemplate = AnyObj> = {
+export type XStoreAtom<T extends XStoreTemplate = any> = {
   xstoreName: string
   initStore: T
   subscribe: XStoreSubscribe<T>
