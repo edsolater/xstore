@@ -1,17 +1,17 @@
 import { flap, MayArray, MayFn, shrinkToValue } from '@edsolater/fnkit'
-import { XStoreAtom, XStoreAtomEffect, XStorePropertyKeys } from './type'
+import { XAtomAtom, XAtomAtomEffect, XAtomPropertyKeys } from './type'
 
 type CleanFn = () => any
-type SubscribedFn<X extends XStoreAtom> = (utils: { attachedAtom: X }) => (void | Promise<void>) | CleanFn
-type SubscribePath<T extends XStoreAtom> = {
+type SubscribedFn<X extends XAtomAtom> = (utils: { attachedAtom: X }) => (void | Promise<void>) | CleanFn
+type SubscribePath<T extends XAtomAtom> = {
   atom: MayFn<T>
-  atomProperty: MayArray<XStorePropertyKeys<T>>
+  atomProperty: MayArray<XAtomPropertyKeys<T>>
 }
 
-export function createAtomEffect<X extends XStoreAtom = XStoreAtom>(
+export function createAtomEffect<X extends XAtomAtom = XAtomAtom>(
   effectFn: SubscribedFn<X>,
-  dependences: MayFn<SubscribePath<XStoreAtom>[], [utils: { attachedAtom: X }]>
-): XStoreAtomEffect {
+  dependences: MayFn<SubscribePath<XAtomAtom>[], [utils: { attachedAtom: X }]>
+): XAtomAtomEffect {
   return (utils: any) => {
     effectFn(utils)
     shrinkToValue(dependences, [utils]).forEach(({ atom, atomProperty }) => {
@@ -26,9 +26,9 @@ export function createAtomEffect<X extends XStoreAtom = XStoreAtom>(
   }
 }
 
-export function createSubscribePath<T extends XStoreAtom = XStoreAtom>(
+export function createSubscribePath<T extends XAtomAtom = XAtomAtom>(
   atom: MayFn<T>,
-  atomProperty: MayArray<XStorePropertyKeys<T>>
+  atomProperty: MayArray<XAtomPropertyKeys<T>>
 ): SubscribePath<T> {
   return { atom: atom, atomProperty }
 }

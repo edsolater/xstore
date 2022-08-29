@@ -1,6 +1,6 @@
 import { AnyObj, MayFn } from '@edsolater/fnkit'
 
-import { XStoreAtom } from '../type'
+import { XStoreAtom } from '../xStore/type'
 import { useXStore, UseXStoreOptions } from './useXStore'
 type ZustandHookDispatcher<T extends AnyObj> = MayFn<Partial<T>, [oldStore: T]>
 

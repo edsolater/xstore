@@ -10,17 +10,17 @@ import {
   shrinkToValue
 } from '@edsolater/fnkit'
 import {
-  CreateXStoreOptions,
-  XStoreAtomSetter,
-  XStoreAtom,
-  XStoreSetOptions,
-  XStoreSubscribe,
-  XStoreSubscribeOptions,
-  XStoreTemplate,
-  XStoreUnsubscribeFn
+  CreateXAtomOptions,
+  XAtomAtomSetter,
+  XAtomAtom,
+  XAtomSetOptions,
+  XAtomSubscribe,
+  XAtomSubscribeOptions,
+  XAtomTemplate,
+  XAtomUnsubscribeFn
 } from './type'
 
-export function isXStore(v: unknown): v is XStoreAtom {
+export function isXAtom(v: unknown): v is XAtomAtom {
   return isObject(v) && isFunction(v.subscribe) && isObject(v.initStore)
 }
 
@@ -29,9 +29,9 @@ export function isXStore(v: unknown): v is XStoreAtom {
  * @param setAll set parent's store
  * @returns computed setState methods
  */
-const createXStoreSet = <S extends XStoreTemplate>(
+const createXAtomSet = <S extends XAtomTemplate>(
   setAll: React.Dispatch<React.SetStateAction<S>>
-): XStoreAtomSetter<S> => {
+): XAtomAtomSetter<S> => {
   function set(p: any, v?: any) {
     if (typeof p === 'string') {
       setAll((oldStore) => {
@@ -40,7 +40,7 @@ const createXStoreSet = <S extends XStoreTemplate>(
         return oldV === newV ? oldStore : { ...oldStore, [p]: newV }
       })
     } else if (typeof p === 'object' || typeof p === 'function') {
-      const options = v as XStoreSetOptions | undefined
+      const options = v as XAtomSetOptions | undefined
       const isCoverMode = options?.operation === 'cover'
       setAll((oldStore) => {
         const newStore = shrinkToValue(p, [oldStore])
@@ -55,34 +55,34 @@ const createXStoreSet = <S extends XStoreTemplate>(
   return set
 }
 
-export function createXStore<T extends XStoreTemplate>(options: CreateXStoreOptions<T>): XStoreAtom<T> {
+export function createXAtom<T extends XAtomTemplate>(options: CreateXAtomOptions<T>): XAtomAtom<T> {
   // create subscribable plain Store
-  const tempAtom = createXStoreWithoutSetters<T>(options.name, options.default)
+  const tempAtom = createXAtomWithoutSetters<T>(options.name, options.default)
   const get = (property?: keyof T) => (property ? tempAtom.values[property] : tempAtom.values)
-  const setStoreState = (dispatch: MayFn<XStoreTemplate, [XStoreTemplate]>) => {
+  const setStoreState = (dispatch: MayFn<XAtomTemplate, [XAtomTemplate]>) => {
     const newStoreValue = shrinkToValue(dispatch, [tempAtom.values])
     Object.entries(newStoreValue).forEach(([k, v]) => {
       // @ts-expect-error no need care about type here
       tempAtom.values[k] = v
     })
   }
-  const set = createXStoreSet(setStoreState)
-  const atom = { ...tempAtom, set, get } as unknown as XStoreAtom<T>
+  const set = createXAtomSet(setStoreState)
+  const atom = { ...tempAtom, set, get } as unknown as XAtomAtom<T>
 
   Promise.resolve().then(() => {
     // to next frame
-    invokeXStoreEffects<T>({ options, attachedAtom: atom })
+    invokeXAtomEffects<T>({ options, attachedAtom: atom })
   })
 
   return atom
 }
 
-function invokeXStoreEffects<T extends XStoreTemplate>({
+function invokeXAtomEffects<T extends XAtomTemplate>({
   options,
   attachedAtom
 }: {
-  options: CreateXStoreOptions<T>
-  attachedAtom: XStoreAtom<T>
+  options: CreateXAtomOptions<T>
+  attachedAtom: XAtomAtom<T>
 }) {
   if (options.atomEffects) {
     Promise.resolve().then(() => {
@@ -91,8 +91,8 @@ function invokeXStoreEffects<T extends XStoreTemplate>({
   }
 }
 
-/** create xStore with subscribe and initStore */
-function createXStoreWithoutSetters<T extends XStoreTemplate>(
+/** create xAtom with subscribe and initStore */
+function createXAtomWithoutSetters<T extends XAtomTemplate>(
   xstoreName: string,
   defaulStoreValues: T | undefined
 ): {
@@ -101,18 +101,18 @@ function createXStoreWithoutSetters<T extends XStoreTemplate>(
     <P extends keyof T>(
       p: P,
       fn: (options: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
-      options?: XStoreSubscribeOptions
-    ): XStoreUnsubscribeFn
+      options?: XAtomSubscribeOptions
+    ): XAtomUnsubscribeFn
     <P extends keyof T>(
       p: P[],
       fn: (options: { curr: T[P][]; prev: T[P][]; unsubscribe: () => void }) => void,
-      options?: XStoreSubscribeOptions
-    ): XStoreUnsubscribeFn
+      options?: XAtomSubscribeOptions
+    ): XAtomUnsubscribeFn
   }
   initStore: T
   values: T
 } {
-  const xStore = {
+  const xAtom = {
     initStore: (defaulStoreValues || {}) as T,
     xstoreName
   }
@@ -165,7 +165,7 @@ function createXStoreWithoutSetters<T extends XStoreTemplate>(
     }
   })
 
-  const subscribe: XStoreSubscribe<T> = (p: (keyof T)[], fn: AnyFn, options?: XStoreSubscribeOptions) => {
+  const subscribe: XAtomSubscribe<T> = (p: (keyof T)[], fn: AnyFn, options?: XAtomSubscribeOptions) => {
     const dependences = [p].flat()
     const unsubscribe = () => {
       dependences.forEach((p) => {
@@ -181,5 +181,5 @@ function createXStoreWithoutSetters<T extends XStoreTemplate>(
     }
     return unsubscribe
   }
-  return Object.assign(xStore, { subscribe, values: proxiedTempStoreValues })
+  return Object.assign(xAtom, { subscribe, values: proxiedTempStoreValues })
 }

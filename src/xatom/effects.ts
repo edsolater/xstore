@@ -1,18 +1,18 @@
 import { WritableKeys } from '@edsolater/fnkit'
-import { XStoreAtomEffect } from './type'
+import { XAtomAtomEffect } from './type'
 import { getLocalStorageItem, setLocalStorageItem } from '../utils/localStorage'
 
 /**
- * is `XStore`'s effect
+ * is `XAtom`'s effect
  */
 export function syncWithLocalStorage<T>(keys: WritableKeys<T>[]) {
   return (({ attachedAtom: self }) => {
     keys.forEach((k) => {
-      self.set(k, getLocalStorageItem(`xStore: ${self.xstoreName}`)?.[k])
+      self.set(k, getLocalStorageItem(`xAtom: ${self.xstoreName}`)?.[k])
       self.subscribe(
         k,
-        (v) => v != null && setLocalStorageItem(`xStore: ${self.xstoreName}`, (s) => ({ ...s, [k]: v }))
+        (v) => v != null && setLocalStorageItem(`xAtom: ${self.xstoreName}`, (s) => ({ ...s, [k]: v }))
       )
     })
-  }) as XStoreAtomEffect<T>
+  }) as XAtomAtomEffect<T>
 }

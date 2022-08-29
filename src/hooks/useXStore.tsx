@@ -1,7 +1,7 @@
 import { unified } from '@edsolater/fnkit'
 import { useRef } from 'react'
 
-import { XStoreAtom } from '../type'
+import { XStoreAtom } from '../xStore/type'
 import { useForceUpdate } from '../utils/useForceUpdate'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect '
 
