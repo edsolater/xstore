@@ -1,18 +1,21 @@
 import { AnyFn, asyncInvoke, isString, shrinkToValue } from '@edsolater/fnkit'
-import { XAtom, XAtomSubscribeOptions, XAtomTemplate, XAtomUnsubscribeFn } from './type'
+import { XAtom, XAtomSubscribeOptions, XAtomTemplate, XAtomUnsubscribeFn, XPlugin } from './type'
 
 type XAtomCreateOptions<T extends XAtomTemplate> = {
   /** used by localStorageEffect*/
   name: string
   default: T
   // atomEffects?: MayDeepArray<XAtomEffect<AnyObj>>
+  plugins?: XPlugin<T>[]
 }
 export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions<T>): XAtom<T> {
   const { subscribeFn, subscribers } = createXAtomSubscribeCenter<T>()
   const { storeState } = createXAtomStoreState({ subscribers, initStoreState: options.default })
   const { get } = createXAtomGet({ storeState })
   const { set } = createXAtomSet({ storeState })
-  return { name: options.name, set, get, subscribe: subscribeFn }
+  const resultXAtom = { name: options.name, set, get, subscribe: subscribeFn }
+  options.plugins?.forEach(({ pluginFn }) => pluginFn(resultXAtom))
+  return resultXAtom
 }
 
 type XAtomSubscribers<T extends XAtomTemplate> = {
@@ -20,6 +23,29 @@ type XAtomSubscribers<T extends XAtomTemplate> = {
     unsubscribe: () => void
     fn: (util: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void
   }[]
+}
+
+function createXAtomSubscribeCenter<T extends XAtomTemplate>(): {
+  subscribers: XAtomSubscribers<T> // for invoke subscribers
+  subscribeFn: XAtom<T>['subscribe']
+} {
+  const subscribersCenter: XAtomSubscribers<T> = {}
+
+  const subscribeFnPart = (property: keyof T, fn, options) => {
+    const unsubscribe = () => {
+      subscribersCenter[property] = subscribersCenter[property]?.filter(
+        (storedSubscriber) => storedSubscriber.fn !== fn
+      )
+    }
+    subscribersCenter[property] = [...(subscribersCenter[property] ?? []), { unsubscribe, fn }]
+    return unsubscribe
+  }
+  const subscribeFn = new Proxy(subscribeFnPart, {
+    get(target, p) {
+      return (...args: [any, any]) => target(p as keyof T, ...args)
+    }
+  }) as XAtom<T>['subscribe']
+  return { subscribers: subscribersCenter, subscribeFn }
 }
 
 /** return  */
@@ -46,29 +72,6 @@ function createXAtomStoreState<T extends XAtomTemplate>({
     }
   })
   return { storeState }
-}
-
-function createXAtomSubscribeCenter<T extends XAtomTemplate>(): {
-  subscribers: XAtomSubscribers<T> // for invoke subscribers
-  subscribeFn: XAtom<T>['subscribe']
-} {
-  const subscribersCenter: XAtomSubscribers<T> = {}
-
-  const subscribeFnPart = (property: keyof T, fn, options) => {
-    const unsubscribe = () => {
-      subscribersCenter[property] = subscribersCenter[property]?.filter(
-        (storedSubscriber) => storedSubscriber.fn !== fn
-      )
-    }
-    subscribersCenter[property] = [...(subscribersCenter[property] ?? []), { unsubscribe, fn }]
-    return unsubscribe
-  }
-  const subscribeFn = new Proxy(subscribeFnPart, {
-    get(target, p) {
-      return (...args: [any, any]) => target(p as keyof T, ...args)
-    }
-  }) as XAtom<T>['subscribe']
-  return { subscribers: subscribersCenter, subscribeFn }
 }
 
 /**

@@ -53,3 +53,8 @@ export type XAtomPieceSubscriber<T extends XAtomTemplate, P extends keyof T> = {
     options?: XAtomSubscribeOptions
   ) => XAtomUnsubscribeFn
 }
+
+export type XPlugin<T extends XAtomTemplate> = {
+  name?: string
+  pluginFn: (xAtom: XAtom<T>) => void
+}
