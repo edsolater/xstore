@@ -1,16 +1,16 @@
-import { isString, shrinkToValue } from '@edsolater/fnkit'
+import { isString, MayFn, shrinkToValue } from '@edsolater/fnkit'
 import { XAtom, XAtomTemplate, XPlugin } from './type'
 
 type XAtomCreateOptions<T extends XAtomTemplate> = {
   /** used by localStorageEffect*/
   name: string
-  default: T
+  default: MayFn<T>
   // atomEffects?: MayDeepArray<XAtomEffect<AnyObj>>
   plugins?: XPlugin<T>[]
 }
-export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions<T>): XAtom<T> {
+export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions<any>): XAtom<T> {
   const { subscribeFn, subscribers } = createXAtomSubscribeCenter<T>()
-  const { storeState } = createXAtomStoreState({ subscribers, initStoreState: options.default })
+  const { storeState } = createXAtomStoreState({ subscribers, initStoreState: shrinkToValue(options.default) })
   const { get } = createXAtomGet({ storeState })
   const { set } = createXAtomSet({ storeState })
   const resultXAtom = { name: options.name, set, get, subscribe: subscribeFn }
@@ -42,7 +42,7 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>(): {
   }
   const subscribeFn = new Proxy(subscribeFnPart, {
     get(target, p) {
-      return (...args: [any, any]) => target(p as keyof T, ...args)
+      return { subscribe: (...args: [any, any]) => target(p as keyof T, ...args) }
     }
   }) as XAtom<T>['subscribe']
   return { subscribers: subscribersCenter, subscribeFn }

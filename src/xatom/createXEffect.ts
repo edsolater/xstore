@@ -1,4 +1,4 @@
-import { AnyFn, AnyObj } from '@edsolater/fnkit'
+import { AnyFn, AnyObj, MayFn, MayPromise, shakeNil, shrinkToValue } from '@edsolater/fnkit'
 import { XAtomPieceSubscriber, XAtomTemplate } from './type'
 
 export type XEffectRegistor = {
@@ -8,19 +8,17 @@ export type XEffectRegistor = {
 }
 
 export function createXEffect<T extends XAtomTemplate = AnyObj>(
-  effectFn: () => AnyFn | void,
-  dependence: XAtomPieceSubscriber<T, keyof T>[],
+  effectFn: () => AnyFn | MayPromise<any> | void,
+  dependence: MayFn<XAtomPieceSubscriber<T, keyof T> | undefined>[],
   options?: {
     effectName?: string
   }
 ): XEffectRegistor {
-  let haveRegisted = false
   const activate = () => {
-    if (haveRegisted) return
-    haveRegisted = true
-    dependence.forEach((xSubscriber) => {
-      xSubscriber.subscribe(effectFn)
+    shakeNil(dependence).forEach((xSubscriber) => {
+      shrinkToValue(xSubscriber)?.subscribe(effectFn)
     })
+    effectFn()
   }
   return {
     activate,
