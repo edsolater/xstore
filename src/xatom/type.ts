@@ -1,4 +1,4 @@
-import { AnyFn, AnyObj, MayArray, MayDeepArray, MayFn, OnlyWritable, SKeyof, WritableKeys } from '@edsolater/fnkit'
+import { AnyObj, OnlyWritable, SKeyof, WritableKeys } from '@edsolater/fnkit'
 
 type MayStateFn<T, F = T> = T | ((prev: F) => T)
 

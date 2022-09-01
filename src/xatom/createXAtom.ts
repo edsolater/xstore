@@ -1,5 +1,5 @@
-import { AnyFn, asyncInvoke, isString, shrinkToValue } from '@edsolater/fnkit'
-import { XAtom, XAtomSubscribeOptions, XAtomTemplate, XAtomUnsubscribeFn, XPlugin } from './type'
+import { isString, shrinkToValue } from '@edsolater/fnkit'
+import { XAtom, XAtomTemplate, XPlugin } from './type'
 
 type XAtomCreateOptions<T extends XAtomTemplate> = {
   /** used by localStorageEffect*/
