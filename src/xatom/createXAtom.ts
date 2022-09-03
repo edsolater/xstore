@@ -1,4 +1,4 @@
-import { isString, MayFn, shrinkToValue } from '@edsolater/fnkit'
+import { AnyFn, isFunction, isString, MayFn, shrinkToValue } from '@edsolater/fnkit'
 import { XAtom, XAtomTemplate, XPlugin } from './type'
 
 type XAtomCreateOptions<T extends XAtomTemplate> = {
@@ -7,10 +7,18 @@ type XAtomCreateOptions<T extends XAtomTemplate> = {
   default: MayFn<T>
   // atomEffects?: MayDeepArray<XAtomEffect<AnyObj>>
   plugins?: XPlugin<T>[]
+  // /**
+  //  * manully remove it from js Heep \
+  //  * it will auto do
+  //  */
+  // destory: () => void
 }
 export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions<any>): XAtom<T> {
-  const { subscribeFn, subscribers } = createXAtomSubscribeCenter<T>()
-  const { storeState } = createXAtomStoreState({ subscribers, initStoreState: shrinkToValue(options.default) })
+  const { subscribeFn, invokeSubscribeFn } = createXAtomSubscribeCenter<T>()
+  const { storeState } = createXAtomStoreState({
+    onSetValue: (utils) => invokeSubscribeFn(utils),
+    initStoreState: shrinkToValue(options.default)
+  })
   const { get } = createXAtomGet({ storeState })
   const { set } = createXAtomSet({ storeState })
   const resultXAtom = { name: options.name, set, get, subscribe: subscribeFn }
@@ -18,44 +26,71 @@ export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions
   return resultXAtom
 }
 
-type XAtomSubscribers<T extends XAtomTemplate> = {
-  [P in keyof T]?: {
-    unsubscribe: () => void
-    fn: (util: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void
-  }[]
+type XAtomSubscribersCenter<T extends XAtomTemplate> = {
+  [P in keyof T]?: Map<
+    (util: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown,
+    {
+      unsubscribe: () => void
+      fn: (util: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown
+      cleanFn?: () => void
+    }
+  >
 }
 
-function createXAtomSubscribeCenter<T extends XAtomTemplate>(): {
-  subscribers: XAtomSubscribers<T> // for invoke subscribers
-  subscribeFn: XAtom<T>['subscribe']
-} {
-  const subscribersCenter: XAtomSubscribers<T> = {}
+function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
+  const subscribersCenter: XAtomSubscribersCenter<T> = {}
 
-  const subscribeFnPart = (property: keyof T, fn, options) => {
-    const unsubscribe = () => {
-      subscribersCenter[property] = subscribersCenter[property]?.filter(
-        (storedSubscriber) => storedSubscriber.fn !== fn
-      )
+  const createUnsubscribeFn = (property: keyof T, fn: AnyFn) => () => {
+    const targetRegisters = subscribersCenter[property]
+    if (targetRegisters?.has(fn)) {
+      targetRegisters.get(fn)?.cleanFn?.()
+      targetRegisters.delete(fn)
     }
-    //@ts-expect-error no need to worry
-    subscribersCenter[property] = [...(subscribersCenter[property] ?? []), { unsubscribe, fn }]
+  }
+
+  const subscribeFnFunctionPart = (property: keyof T, fn, options) => {
+    const unsubscribe = createUnsubscribeFn(property, fn)
+    subscribersCenter[property] = (subscribersCenter[property] ?? new Map()).set(fn, { unsubscribe, fn })
     return unsubscribe
   }
-  const subscribeFn = new Proxy(subscribeFnPart, {
+  const subscribeFn = new Proxy(subscribeFnFunctionPart, {
     get(target, p) {
       return { subscribe: (...args: [any, any]) => target(p as keyof T, ...args) }
     }
   }) as XAtom<T>['subscribe']
-  return { subscribers: subscribersCenter, subscribeFn }
+
+  const invokeSubscribeFn = ({
+    propertyName,
+    value,
+    oldValue
+  }: {
+    propertyName: string
+    value: any
+    oldValue: any
+  }) => {
+    const targetRegisters = subscribersCenter[propertyName]
+    if (!targetRegisters) return
+    for (const register of targetRegisters.values()) {
+      register.cleanFn?.()
+      const cleanFn = register.fn({ curr: value, prev: oldValue, unsubscribe: register.unsubscribe })
+      if (isFunction(cleanFn)) {
+        register.cleanFn = cleanFn
+      }
+    }
+    subscribersCenter[propertyName]?.forEach(({ unsubscribe, fn: subFn }) => {
+      subFn({ curr: value, prev: oldValue, unsubscribe })
+    })
+  }
+  return { invokeSubscribeFn, subscribeFn }
 }
 
 /** return  */
 function createXAtomStoreState<T extends XAtomTemplate>({
   initStoreState,
-  subscribers
+  onSetValue
 }: {
   initStoreState: T
-  subscribers: XAtomSubscribers<T> // transform
+  onSetValue: (utils: { propertyName: string; value: any; oldValue: any }) => void
 }): { storeState: T } {
   const storeState = new Proxy(initStoreState, {
     set(target, key, value, receiver) {
@@ -65,9 +100,7 @@ function createXAtomStoreState<T extends XAtomTemplate>({
       if (oldValue === value) {
         return true // sameValue, no need to continue
       } else {
-        subscribers[key]?.forEach(({ unsubscribe, fn: subFn }) => {
-          subFn({ curr: value, prev: oldValue, unsubscribe })
-        })
+        onSetValue({ propertyName: key, value, oldValue })
         return Reflect.set(target, key, value, receiver)
       }
     }
