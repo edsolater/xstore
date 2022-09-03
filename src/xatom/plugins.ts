@@ -2,7 +2,7 @@ import { flap, MayArray } from '@edsolater/fnkit'
 import { getLocalStorageItem, setLocalStorageItem } from '../utils/localStorage'
 import { XAtomTemplate, XPlugin } from './type'
 
-export function createXPlugin<T>(config: XPlugin<T>): XPlugin<T> {
+export function createXPlugin<T extends XAtomTemplate>(config: XPlugin<T>): XPlugin<T> {
   return config
 }
 /**

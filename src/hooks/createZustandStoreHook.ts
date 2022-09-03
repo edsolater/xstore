@@ -10,7 +10,7 @@ type ZustandHook<T extends AnyObj> = {
   getState(): T
 }
 
-function createPathCollector<T extends object>(store: T) {
+function createPathCollector<T extends object>(store: T): [T, () => (string | symbol)[]] {
   const path: (string | symbol)[] = []
   const getPath = () => path
   return [
@@ -21,7 +21,7 @@ function createPathCollector<T extends object>(store: T) {
       }
     }),
     getPath
-  ] as const
+  ]
 }
 
 export function createZustandStoreHook<T extends object>(

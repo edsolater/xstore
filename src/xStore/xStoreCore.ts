@@ -174,6 +174,7 @@ function createXStoreWithoutSetters<T extends XStoreTemplate>(
     }
     const callbackItem = { fn, dependences, unsubscribe }
     dependences.forEach((p) => {
+      // @ts-expect-error no need to check this 
       subscribedCallbacks[p] = [...(subscribedCallbacks[p] ?? []), callbackItem]
     })
     if (options?.immediately) {

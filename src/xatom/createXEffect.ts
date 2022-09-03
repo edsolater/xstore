@@ -7,9 +7,9 @@ export type XEffectRegistor = {
   name?: string
 }
 
-export function createXEffect<T extends XAtomTemplate = AnyObj>(
+export function createXEffect(
   effectFn: () => AnyFn | MayPromise<any> | void,
-  dependence: MayFn<XAtomPieceSubscriber<T, keyof T> | undefined>[],
+  dependence: MayFn<XAtomPieceSubscriber<XAtomTemplate, string> | undefined>[],
   options?: {
     effectName?: string
   }

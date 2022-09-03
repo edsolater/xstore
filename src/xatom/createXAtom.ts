@@ -37,6 +37,7 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>(): {
         (storedSubscriber) => storedSubscriber.fn !== fn
       )
     }
+    //@ts-expect-error no need to worry
     subscribersCenter[property] = [...(subscribersCenter[property] ?? []), { unsubscribe, fn }]
     return unsubscribe
   }
