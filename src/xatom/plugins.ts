@@ -17,7 +17,7 @@ export function recordWidthLocalStorage<T extends XAtomTemplate>(options: {
   namespaceHyphenLetter?: string
 }) {
   return createXPlugin<T>({
-    name: 'syncWithLocalStorage',
+    name: 'record with local storage',
     pluginFn({ set, subscribe }) {
       flap(options.observeProperty).forEach((propertyName: any) => {
         const storageKey = [options.keyPrefix, propertyName].join(options.namespaceHyphenLetter ?? '_')

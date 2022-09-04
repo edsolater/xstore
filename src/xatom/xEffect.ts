@@ -25,3 +25,12 @@ export function createXEffect(
     name: options?.effectName
   }
 }
+
+export function mergeXEffects(...effectRegistors: XEffectRegistor[]): XEffectRegistor {
+  return {
+    name: shakeNil(effectRegistors.map((e) => e.name)).join(' '),
+    activate: () => {
+      effectRegistors.forEach((e) => e.activate())
+    }
+  }
+}
