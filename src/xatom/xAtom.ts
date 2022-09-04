@@ -39,7 +39,6 @@ type XAtomSubscribersCenter<T extends XAtomTemplate> = {
 
 function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
   const subscribersCenter: XAtomSubscribersCenter<T> = {}
-
   const createUnsubscribeFn = (property: keyof T, fn: AnyFn) => () => {
     const targetRegisters = subscribersCenter[property]
     if (targetRegisters?.has(fn)) {
@@ -47,16 +46,13 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
       targetRegisters.delete(fn)
     }
   }
-
-  const subscribeFnFunctionPart = (property: keyof T, fn, options) => {
+  const subscribeFnFunctionCore = (property: keyof T, fn, options) => {
     const unsubscribe = createUnsubscribeFn(property, fn)
     subscribersCenter[property] = (subscribersCenter[property] ?? new Map()).set(fn, { unsubscribe, fn })
     return unsubscribe
   }
-  const subscribeFn = new Proxy(subscribeFnFunctionPart, {
-    get(target, p) {
-      return { subscribe: (...args: [any, any]) => target(p as keyof T, ...args) }
-    }
+  const subscribeFn = new Proxy(subscribeFnFunctionCore, {
+    get: (target, p) => ({ subscribe: (...args: [any, any]) => target(p as keyof T, ...args) })
   }) as XAtom<T>['subscribe']
 
   const invokeSubscribeFn = ({
@@ -84,7 +80,6 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
   return { invokeSubscribeFn, subscribeFn }
 }
 
-/** return  */
 function createXAtomStoreState<T extends XAtomTemplate>({
   initStoreState,
   onSetValue
@@ -100,8 +95,9 @@ function createXAtomStoreState<T extends XAtomTemplate>({
       if (oldValue === value) {
         return true // sameValue, no need to continue
       } else {
+        const setHasSuccess = Reflect.set(target, key, value, receiver)
         onSetValue({ propertyName: key, value, oldValue })
-        return Reflect.set(target, key, value, receiver)
+        return setHasSuccess
       }
     }
   })
