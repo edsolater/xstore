@@ -31,7 +31,7 @@ export type XAtom<T extends XAtomTemplate = any> = {
   subscribe: {
     <P extends keyof T>(
       propertyName: P | '$any',
-      fn: (options: { propertyName: P; curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
+      fn: (options: { propertyName: P; value: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
       options?: XAtomSubscribeOptions
     ): XAtomUnsubscribeFn
   } & {
@@ -49,7 +49,7 @@ export type XAtomSubscribeOptions = {
 
 export type XAtomPieceSubscriber<T extends XAtomTemplate, P extends keyof T> = {
   subscribe: (
-    fn: (options: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
+    fn: (options: { propertyName: P; value: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
     options?: XAtomSubscribeOptions
   ) => XAtomUnsubscribeFn
 }

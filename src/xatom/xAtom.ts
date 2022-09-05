@@ -28,10 +28,10 @@ export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions
 
 type XAtomSubscribersCenter<T extends XAtomTemplate> = {
   [P in keyof T | '$any']?: Map<
-    (util: { propertyName: keyof T; curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown,
+    (util: { propertyName: keyof T; value: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown,
     {
       unsubscribe: () => void
-      fn: (util: { propertyName: keyof T; curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown
+      fn: (util: { propertyName: keyof T; value: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown
       cleanFn?: () => void
     }
   >
@@ -70,16 +70,16 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
     if (!targetRegisters) return
     for (const register of targetRegisters.values()) {
       register.cleanFn?.()
-      const cleanFn = register.fn({ propertyName, curr: value, prev: oldValue, unsubscribe: register.unsubscribe })
+      const cleanFn = register.fn({ propertyName, value, prev: oldValue, unsubscribe: register.unsubscribe })
       if (isFunction(cleanFn)) {
         register.cleanFn = cleanFn
       }
     }
     subscribersCenter[propertyName]?.forEach(({ unsubscribe, fn: subFn }) => {
-      subFn({ propertyName, curr: value, prev: oldValue, unsubscribe })
+      subFn({ propertyName, value, prev: oldValue, unsubscribe })
     })
     subscribersCenter['$any']?.forEach(({ unsubscribe, fn: subFn }) => {
-      subFn({ propertyName, curr: value, prev: oldValue, unsubscribe })
+      subFn({ propertyName, value, prev: oldValue, unsubscribe })
     })
   }
   return { invokeSubscribeFn, subscribeFn }
