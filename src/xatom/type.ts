@@ -30,8 +30,8 @@ export type XAtom<T extends XAtomTemplate = any> = {
   // subscrive value change
   subscribe: {
     <P extends keyof T>(
-      p: P,
-      fn: (options: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
+      propertyName: P | '$any',
+      fn: (options: { propertyName: P; curr: T[P]; prev: T[P]; unsubscribe: () => void }) => void,
       options?: XAtomSubscribeOptions
     ): XAtomUnsubscribeFn
   } & {

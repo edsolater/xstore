@@ -27,11 +27,11 @@ export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions
 }
 
 type XAtomSubscribersCenter<T extends XAtomTemplate> = {
-  [P in keyof T]?: Map<
-    (util: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown,
+  [P in keyof T | '$any']?: Map<
+    (util: { propertyName: keyof T; curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown,
     {
       unsubscribe: () => void
-      fn: (util: { curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown
+      fn: (util: { propertyName: keyof T; curr: T[P]; prev: T[P]; unsubscribe: () => void }) => unknown
       cleanFn?: () => void
     }
   >
@@ -39,18 +39,20 @@ type XAtomSubscribersCenter<T extends XAtomTemplate> = {
 
 function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
   const subscribersCenter: XAtomSubscribersCenter<T> = {}
-  const createUnsubscribeFn = (property: keyof T, fn: AnyFn) => () => {
+
+  const createUnsubscribeFn = (property: keyof T | '$any', fn: AnyFn) => () => {
     const targetRegisters = subscribersCenter[property]
     if (targetRegisters?.has(fn)) {
       targetRegisters.get(fn)?.cleanFn?.()
       targetRegisters.delete(fn)
     }
   }
-  const subscribeFnFunctionCore = (property: keyof T, fn, options) => {
+  const subscribeFnFunctionCore = (property: keyof T | '$any', fn: AnyFn, options) => {
     const unsubscribe = createUnsubscribeFn(property, fn)
     subscribersCenter[property] = (subscribersCenter[property] ?? new Map()).set(fn, { unsubscribe, fn })
     return unsubscribe
   }
+
   const subscribeFn = new Proxy(subscribeFnFunctionCore, {
     get: (target, p) => ({ subscribe: (...args: [any, any]) => target(p as keyof T, ...args) })
   }) as XAtom<T>['subscribe']
@@ -68,13 +70,16 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
     if (!targetRegisters) return
     for (const register of targetRegisters.values()) {
       register.cleanFn?.()
-      const cleanFn = register.fn({ curr: value, prev: oldValue, unsubscribe: register.unsubscribe })
+      const cleanFn = register.fn({ propertyName, curr: value, prev: oldValue, unsubscribe: register.unsubscribe })
       if (isFunction(cleanFn)) {
         register.cleanFn = cleanFn
       }
     }
     subscribersCenter[propertyName]?.forEach(({ unsubscribe, fn: subFn }) => {
-      subFn({ curr: value, prev: oldValue, unsubscribe })
+      subFn({ propertyName, curr: value, prev: oldValue, unsubscribe })
+    })
+    subscribersCenter['$any']?.forEach(({ unsubscribe, fn: subFn }) => {
+      subFn({ propertyName, curr: value, prev: oldValue, unsubscribe })
     })
   }
   return { invokeSubscribeFn, subscribeFn }
