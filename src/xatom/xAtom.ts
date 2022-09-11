@@ -67,20 +67,25 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>() {
     oldValue: any
   }) => {
     const targetRegisters = subscribersCenter[propertyName]
-    if (!targetRegisters) return
-    for (const register of targetRegisters.values()) {
-      register.cleanFn?.()
-      const cleanFn = register.fn({ propertyName, value, prev: oldValue, unsubscribe: register.unsubscribe })
-      if (isFunction(cleanFn)) {
-        register.cleanFn = cleanFn
+    if (targetRegisters) {
+      for (const register of targetRegisters.values()) {
+        register.cleanFn?.()
+        const cleanFn = register.fn({ propertyName, value, prev: oldValue, unsubscribe: register.unsubscribe })
+        if (isFunction(cleanFn)) {
+          register.cleanFn = cleanFn
+        }
       }
     }
-    subscribersCenter[propertyName]?.forEach(({ unsubscribe, fn: subFn }) => {
-      subFn({ propertyName, value, prev: oldValue, unsubscribe })
-    })
-    subscribersCenter['$any']?.forEach(({ unsubscribe, fn: subFn }) => {
-      subFn({ propertyName, value, prev: oldValue, unsubscribe })
-    })
+    const all = subscribersCenter['$any']
+    if (all) {
+      for (const register of all.values()) {
+        register.cleanFn?.()
+        const cleanFn = register.fn({ propertyName, value, prev: oldValue, unsubscribe: register.unsubscribe })
+        if (isFunction(cleanFn)) {
+          register.cleanFn = cleanFn
+        }
+      }
+    }
   }
   return { invokeSubscribeFn, subscribeFn }
 }
