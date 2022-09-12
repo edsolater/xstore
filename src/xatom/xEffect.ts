@@ -1,4 +1,4 @@
-import { AnyFn, AnyObj, MayFn, MayPromise, shakeNil, shrinkToValue } from '@edsolater/fnkit'
+import { AnyFn, MayPromise, shakeNil } from '@edsolater/fnkit'
 import { XAtomPieceSubscriber, XAtomTemplate } from './type'
 
 export type XEffectRegistor = {
@@ -7,18 +7,33 @@ export type XEffectRegistor = {
   name?: string
 }
 
+export type XEffectSubscribeOptions = {
+  effectName?: string
+}
+
 export function createXEffect(
-  effectFn: () => AnyFn | MayPromise<any> | void,
-  dependence: MayFn<XAtomPieceSubscriber<XAtomTemplate, string> | undefined>[],
-  options?: {
-    effectName?: string
-  }
+  effectFn: (utils: {
+    value: XAtomPieceSubscriber<XAtomTemplate, string>[] // TODO type
+    prev: XAtomPieceSubscriber<XAtomTemplate, string>[] // TODO type
+  }) => AnyFn | MayPromise<any> | void,
+  dependences: (XAtomPieceSubscriber<XAtomTemplate, string> | undefined)[],
+  options?: XEffectSubscribeOptions
 ): XEffectRegistor {
+  const currentValue = new Map<XAtomPieceSubscriber<XAtomTemplate, string>, any>()
+  const prevValue = new Map<XAtomPieceSubscriber<XAtomTemplate, string>, any>()
   const activate = () => {
-    shakeNil(dependence).forEach((xSubscriber) => {
-      shrinkToValue(xSubscriber)?.subscribe(effectFn)
+    shakeNil(dependences).forEach((dependence) => {
+      currentValue.set(dependence, undefined)
+      prevValue.set(dependence, undefined)
+      dependence?.subscribe(
+        ({ prev, value }) => {
+          currentValue.set(dependence, value)
+          prevValue.set(dependence, prev)
+          effectFn({ value: [...currentValue.values()], prev: [...prevValue.values()] })
+        },
+        { immediately: true }
+      )
     })
-    effectFn()
   }
   return {
     activate,
