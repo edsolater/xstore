@@ -1,17 +1,27 @@
 import { AnyFn, isFunction, isString, MayFn, shrinkToValue } from '@edsolater/fnkit'
+import { XStoreAtomEffect } from '../xStore/type'
 import { XAtom, XAtomTemplate, XPlugin } from './type'
+import { XEffectRegistor } from './xEffect'
 
 type XAtomCreateOptions<T extends XAtomTemplate> = {
   /** used by localStorageEffect*/
   name: string
   default: MayFn<T>
-  // atomEffects?: MayDeepArray<XAtomEffect<AnyObj>>
+  /**
+   * effects: additional reactive rules base on xatomProperty value change
+   * plugins: official global reactive rules (appply to all x atom Property if not specified). plugin must special to one specific xatom
+   */
   plugins?: XPlugin<T>[]
   // /**
   //  * manully remove it from js Heep \
   //  * it will auto do
   //  */
   // destory: () => void
+  /**
+   *  a shortcut for xeffect attaching
+   *  effects: additional reactive rules base on xatomProperty value change
+   */
+  effects?: XEffectRegistor[]
 }
 export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions<any>): XAtom<T> {
   const { subscribeFn, invokeSubscribeFn } = createXAtomSubscribeCenter<T>()
@@ -22,7 +32,10 @@ export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions
   const { get } = createXAtomGet({ storeState })
   const { set } = createXAtomSet({ storeState })
   const resultXAtom = { name: options.name, set, get, subscribe: subscribeFn }
-  options.plugins?.forEach(({ pluginFn }) => pluginFn(resultXAtom))
+  Promise.resolve().then(() => {
+    options.plugins?.forEach(({ pluginFn }) => pluginFn(resultXAtom))
+    options.effects?.forEach((effect) => effect.activate())
+  })
   return resultXAtom
 }
 
