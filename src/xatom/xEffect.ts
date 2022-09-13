@@ -11,12 +11,16 @@ export type XEffectSubscribeOptions = {
   effectName?: string
 }
 
-export function createXEffect(
+export function createXEffect<T extends XAtomPieceSubscriber<XAtomTemplate, string>[]>(
   effectFn: (utils: {
-    value: XAtomPieceSubscriber<XAtomTemplate, string>[] // TODO type
-    prev: XAtomPieceSubscriber<XAtomTemplate, string>[] // TODO type
+    value: {
+      [I in keyof T]: T[I] extends XAtomPieceSubscriber<infer X, infer Pro> ? X[Pro] : undefined
+    }
+    prev: {
+      [I in keyof T]: (T[I] extends XAtomPieceSubscriber<infer X, infer Pro> ? X[Pro] : undefined) | undefined
+    }
   }) => AnyFn | MayPromise<any> | void,
-  dependences: (XAtomPieceSubscriber<XAtomTemplate, string> | undefined)[],
+  dependences: [...T],
   options?: XEffectSubscribeOptions
 ): XEffectRegistor {
   const currentValue = new Map<XAtomPieceSubscriber<XAtomTemplate, string>, any>()
@@ -29,6 +33,7 @@ export function createXEffect(
         ({ prev, value }) => {
           currentValue.set(dependence, value)
           prevValue.set(dependence, prev)
+          //@ts-expect-error no type-check
           effectFn({ value: [...currentValue.values()], prev: [...prevValue.values()] })
         },
         { immediately: true }
