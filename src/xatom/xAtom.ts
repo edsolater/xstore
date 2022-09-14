@@ -1,11 +1,10 @@
 import { AnyFn, isFunction, isString, MayFn, shrinkToValue } from '@edsolater/fnkit'
 import { XAtom, XAtomTemplate, XPlugin } from './type'
-import { XEffectRegistor } from './xEffect'
 
-type XAtomCreateOptions<T extends XAtomTemplate> = {
+export type XAtomCreateOptions<T extends XAtomTemplate> = {
   /** used by localStorageEffect*/
   name: string
-  default: MayFn<T>
+  default?: MayFn<T>
   /**
    * effects: additional reactive rules base on xatomProperty value change
    * plugins: official global reactive rules (appply to all x atom Property if not specified). plugin must special to one specific xatom
@@ -16,16 +15,11 @@ type XAtomCreateOptions<T extends XAtomTemplate> = {
   //  * it will auto do
   //  */
   // destory: () => void
-  /**
-   *  a shortcut for xeffect attaching
-   *  effects: additional reactive rules base on xatomProperty value change
-   */
-  effects?: XEffectRegistor[]
 }
 export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions<any>): XAtom<T> {
   const { storeState } = createXAtomStoreState({
     onSetValue: (utils) => invokeSubscribeFn(utils),
-    initStoreState: shrinkToValue(options.default)
+    initStoreState: shrinkToValue(options.default ?? {})
   })
 
   const { subscribeFn, invokeSubscribeFn } = createXAtomSubscribeCenter<T>({ storeState })
@@ -34,7 +28,6 @@ export function createXAtom<T extends XAtomTemplate>(options: XAtomCreateOptions
   const resultXAtom = { name: options.name, set, get, subscribe: subscribeFn }
   Promise.resolve().then(() => {
     options.plugins?.forEach(({ pluginFn }) => pluginFn(resultXAtom))
-    options.effects?.forEach((effect) => effect.activate())
   })
   return resultXAtom
 }
@@ -79,7 +72,7 @@ function createXAtomSubscribeCenter<T extends XAtomTemplate>({ storeState }: { s
   ) => {
     const unsubscribe = createUnsubscribeFn(property, fn)
     subscribersCenter[property] = (subscribersCenter[property] ?? new Map()).set(fn, { unsubscribe, fn, options })
-    
+
     // apply option
     if (options?.immediately) {
       if (property === '$any') {

@@ -3,7 +3,7 @@ import { XAtomPieceSubscriber, XAtomTemplate } from './type'
 
 export type XEffectRegistor = {
   // unused XEffect should not activated and should be tree-shaked
-  activate(): void
+  activate(): () => void
   name?: string
 }
 
@@ -12,33 +12,45 @@ export type XEffectSubscribeOptions = {
 }
 
 export function createXEffect<T extends XAtomPieceSubscriber<XAtomTemplate, string>[]>(
-  effectFn: (utils: {
+  effectFn: (
     value: {
       [I in keyof T]: T[I] extends XAtomPieceSubscriber<infer X, infer Pro> ? X[Pro] : undefined
+    },
+    utils: {
+      prev: {
+        [I in keyof T]: (T[I] extends XAtomPieceSubscriber<infer X, infer Pro> ? X[Pro] : undefined) | undefined
+      }
     }
-    prev: {
-      [I in keyof T]: (T[I] extends XAtomPieceSubscriber<infer X, infer Pro> ? X[Pro] : undefined) | undefined
-    }
-  }) => AnyFn | MayPromise<any> | void,
+  ) => AnyFn | MayPromise<any> | void,
   dependences: [...T],
   options?: XEffectSubscribeOptions
 ): XEffectRegistor {
   const currentValue = new Map<XAtomPieceSubscriber<XAtomTemplate, string>, any>()
   const prevValue = new Map<XAtomPieceSubscriber<XAtomTemplate, string>, any>()
+  const unsubscribeFns = [] as (() => void)[]
   const activate = () => {
     shakeNil(dependences).forEach((dependence) => {
       currentValue.set(dependence, undefined)
       prevValue.set(dependence, undefined)
-      dependence?.subscribe(
+      const unsubscribe = dependence.subscribe(
         ({ prev, value }) => {
           currentValue.set(dependence, value)
           prevValue.set(dependence, prev)
           //@ts-expect-error no type-check
-          effectFn({ value: [...currentValue.values()], prev: [...prevValue.values()] })
+          effectFn([...currentValue.values()], { prev: [...prevValue.values()] })
         },
         { immediately: true }
       )
+      unsubscribeFns.push(unsubscribe)
     })
+
+    const stop = () => {
+      unsubscribeFns.forEach((fn) => fn())
+      currentValue.clear()
+      prevValue.clear()
+    }
+    
+    return stop
   }
   return {
     activate,
@@ -50,7 +62,8 @@ export function mergeXEffects(...effectRegistors: XEffectRegistor[]): XEffectReg
   return {
     name: shakeNil(effectRegistors.map((e) => e.name)).join(' '),
     activate: () => {
-      effectRegistors.forEach((e) => e.activate())
+      const stopFns = effectRegistors.map((e) => e.activate())
+      return () => stopFns.forEach((f) => f())
     }
   }
 }

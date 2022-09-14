@@ -35,7 +35,7 @@ export type XAtom<T extends XAtomTemplate = any> = {
       options?: XAtomSubscribeOptions
     ): XAtomUnsubscribeFn
   } & {
-    [P in keyof T]: XAtomPieceSubscriber<T, P>
+    [P in keyof T]-?: XAtomPieceSubscriber<T, P>
   }
 
   // history: readonly T[] // TODO imply it!
