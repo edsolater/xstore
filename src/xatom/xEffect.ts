@@ -30,8 +30,10 @@ export function createXEffect<T extends XAtomPieceSubscriber<XAtomTemplate, stri
   const unsubscribeFns = [] as (() => void)[]
   const activate = () => {
     shakeNil(dependences).forEach((dependence) => {
-      currentValue.set(dependence, undefined)
-      prevValue.set(dependence, undefined)
+      currentValue.set(dependence, dependence.initValue)
+    })
+    
+    shakeNil(dependences).forEach((dependence) => {
       const unsubscribe = dependence.subscribe(
         ({ prev, value }) => {
           currentValue.set(dependence, value)
@@ -49,7 +51,7 @@ export function createXEffect<T extends XAtomPieceSubscriber<XAtomTemplate, stri
       currentValue.clear()
       prevValue.clear()
     }
-    
+
     return stop
   }
   return {
