@@ -1,7 +1,7 @@
 import { AnyObj, MayFn } from '@edsolater/fnkit'
 import { XAtom } from '../xatom/type'
 
-import { useXStore, UseXStoreOptions } from './useXStore'
+import { useXAtom, UseXAtomOptions } from './useXAtom'
 type ZustandHookDispatcher<T extends AnyObj> = MayFn<Partial<T>, [oldStore: T]>
 
 type ZustandHook<T extends AnyObj> = {
@@ -10,6 +10,9 @@ type ZustandHook<T extends AnyObj> = {
   getState(): T
 }
 
+/**
+ * @deprecated
+ */
 function createPathCollector<T extends object>(store: T): [T, () => (string | symbol)[]] {
   const path: (string | symbol)[] = []
   const getPath = () => path
@@ -24,15 +27,18 @@ function createPathCollector<T extends object>(store: T): [T, () => (string | sy
   ]
 }
 
+/**
+ * @deprecated
+ */
 export function createZustandStoreHook<T extends object>(
   xStoreAtom: XAtom<T>,
-  options?: UseXStoreOptions
+  options?: UseXAtomOptions
 ): ZustandHook<T> {
   const hook = <U>(selector?: (storeValues: T) => U) => {
     const [pathCollector, getPath] = createPathCollector(xStoreAtom.get())
     selector?.(pathCollector)
     const propertyKey = getPath()[0]
-    const value = selector ? useXStore(xStoreAtom)[propertyKey] : useXStore(xStoreAtom, options)
+    const value = selector ? useXAtom(xStoreAtom)[propertyKey] : useXAtom(xStoreAtom, options)
     return value
   }
   hook.getState = xStoreAtom.get

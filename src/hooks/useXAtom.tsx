@@ -5,12 +5,12 @@ import { useForceUpdate } from '../utils/useForceUpdate'
 import { useIsomorphicLayoutEffect } from '../utils/useIsomorphicLayoutEffect '
 import { XAtom } from '../xatom/type'
 
-export type UseXStoreOptions = {
+export type UseXAtomOptions = {
   /** anything in atom can cause rerender */
   urgentRerender?: boolean
 }
 
-export function useXStore<T extends object>(xStoreAtom: XAtom<T>, options?: UseXStoreOptions): T {
+export function useXAtom<T extends object>(xStoreAtom: XAtom<T>, options?: UseXAtomOptions): T {
   const [, forceUpdate] = useForceUpdate()
 
   const subscribeKeys = useRef((options?.urgentRerender ? Object.keys(xStoreAtom.get()) : []) as (keyof T)[])
