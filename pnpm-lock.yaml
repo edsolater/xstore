@@ -1,7 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@edsolater/fnkit': ^0.1.8
+  '@edsolater/fnkit': ^0.1.10
   '@types/node': ^18.7.18
   '@types/react': ^18.0.20
   react: ^18.2.0
@@ -9,7 +9,7 @@ specifiers:
   typescript: ^4.8.3
 
 dependencies:
-  '@edsolater/fnkit': 0.1.8
+  '@edsolater/fnkit': 0.1.10
   react: registry.npmmirror.com/react/18.2.0
 
 devDependencies:
@@ -20,8 +20,8 @@ devDependencies:
 
 packages:
 
-  /@edsolater/fnkit/0.1.8:
-    resolution: {integrity: sha512-1BT8AtVQyWOvoRqdpHVXZEC9Ae2uB7hqxQYLMMLZ+uRFeNdgFG59xjPXYqyQURkS+SqQxoDj1AqR4M6lYz/xJw==}
+  /@edsolater/fnkit/0.1.10:
+    resolution: {integrity: sha512-VFzjuwNU78//YJMAqqITeSiYgYC4SYKycIlAXjg8Ius13BvtBCwwB6AM+joYRTHZSDutuVmOav4F+TMHpRxDxw==}
     dev: false
 
   /@esbuild/linux-loong64/0.15.7:
